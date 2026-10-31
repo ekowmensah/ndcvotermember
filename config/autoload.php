@@ -2,6 +2,11 @@
 declare(strict_types=1);
 // Phase 1 only. Legacy workflow files are intentionally not loaded.
 return [
+ 'App\\Reporting\\OperationalReports'=>'services/reporting/OperationalReports.php',
+ 'App\\Reporting\\PeopleReports'=>'services/reporting/PeopleReports.php',
+ 'App\\Reporting\\ReportsController'=>'controllers/reporting/ReportsController.php',
+ 'App\\Security\\Workspace\\ExecutivePeople'=>'services/security/workspace/ExecutivePeople.php',
+ 'App\\Security\\Workspace\\ExecutiveWorkspace'=>'services/security/workspace/ExecutiveWorkspace.php',
  'App\\Security\\AppointmentAccounts'=>'services/security/AppointmentAccounts.php',
  'App\\Security\\SystemHealth'=>'services/security/SystemHealth.php',
  'App\\Membership\\EnrollmentWriter'=>'services/membership/EnrollmentWriter.php',

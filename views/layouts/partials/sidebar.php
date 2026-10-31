@@ -42,6 +42,7 @@ if(Auth::canManage()&&\App\Security\ExecutiveAccess::ready()){$groups[]=['label'
 if(\App\Security\ExecutiveAccess::restricted()){
  $groups=[['label'=>'Executive workspace','items'=>[$item('dashboard','bi-grid-1x2','My jurisdiction',$currentPage==='dashboard'),$item('voters','bi-person-lines-fill','Voters',in_array($currentPage,['voters','voter'],true)),$item('members','bi-people','Members',in_array($currentPage,['members','member'],true))]],['label'=>'Personal','items'=>[$item('account','bi-person-gear','My account',$currentPage==='account')]]];
 }
+$groups[]=['label'=>'Reports','items'=>[$item('reports','bi-bar-chart-line','Reports Centre',in_array($currentPage,['reports','reports_print'],true))]];
 if(\App\Membership\BranchWorkflow::ready()&&(Auth::admin()||\App\Membership\BranchWorkflow::permitted('can_nominate')||\App\Membership\BranchWorkflow::permitted('can_approve_membership'))){$groups[]=['label'=>'Membership review','items'=>[$item('membership_nominations','bi-person-check','Nominations',in_array($currentPage,['membership_nominations','membership_nomination'],true))]];}
 ?>
 <aside class="app-sidebar bg-sidebar shadow-sm">

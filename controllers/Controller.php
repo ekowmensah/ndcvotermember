@@ -10,6 +10,8 @@ final class Controller
   Auth::requireLogin();
   if(\App\Security\ExecutiveAccess::dispatch($page)){return;}
   switch($page){
+   case 'reports': \App\Reporting\ReportsController::get();break;
+   case 'reports_print': \App\Reporting\ReportsController::get(true);break;
    case 'staff_member_details': Auth::requireRole(['admin']);$details=\App\Security\StaffIdentity::details(Validation::id($_GET,'id'));header('Content-Type: application/json; charset=utf-8');echo json_encode($details,JSON_THROW_ON_ERROR);exit;
    case 'executive_account': \App\Security\AppointmentAccounts::page(Validation::id($_GET,'id'));break;
    case 'branch_voter_edit': case 'membership_nominations': case 'membership_nomination': \App\Membership\BranchWorkflowController::get($page);break;
@@ -76,6 +78,7 @@ final class Controller
   }
   Auth::requireLogin();if($action==='logout'){Auth::logout();redirect('login');}
   \App\Security\ExecutiveAccess::guardPost($action);
+  if($action==='people_report_csv'){\App\Reporting\ReportsController::csv();}
   if($action==='security_confirm'){\App\Security\SessionSecurity::confirm();}
   \App\Security\SessionSecurity::guard($action,$_POST);
   if(in_array($action,['appointment_activation_issue','appointment_grant_save'],true)){
@@ -96,6 +99,7 @@ final class Controller
     flash('success','Saved successfully.');
    }catch(\InvalidArgumentException $error){flash('danger',$error->getMessage());}
    catch(\PDOException $error){error_log((string)$error);flash('danger','Unable to save. No changes were made.');}
+   if($action==='executive_flag'){redirect('voter',['id'=>Validation::id($_POST,'voter_id')]);}
    redirect(in_array($action,['executive_access_save','staff_member_link'],true)?'staff':($action==='review_resolve'?'record_reviews':'voters'));
   }
   if($action==='staff_save'){\App\Security\StaffController::save();}

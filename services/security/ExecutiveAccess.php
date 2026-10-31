@@ -48,35 +48,40 @@ final class ExecutiveAccess
  }
  public static function person(int $id): array {
   $where=self::condition();
+  $extra=(\App\VoterService::namesReady()?',v.first_name,v.last_name':',NULL AS first_name,NULL AS last_name').',v.is_deceased,m.status AS membership_status,m.joined_on';
+  $extra.=\App\PhotoService::ready()?',EXISTS(SELECT 1 FROM voter_photos vp WHERE vp.voter_record_id=v.id) AS has_photo':',0 AS has_photo';
+  $residentialJoin='';
+  if(\App\AddressService::ready()){$extra.=',v.town,rr.name AS residential_region,rd.name AS residential_district';$residentialJoin=' LEFT JOIN residential_regions rr ON rr.id=v.residential_region_id LEFT JOIN districts rd ON rd.id=v.residential_district_id';}
+  else{$extra.=',NULL AS town,NULL AS residential_region,NULL AS residential_district';}
   $private=self::contacts($id)?'v.date_of_birth,v.phone_encrypted,v.email_encrypted,v.address_encrypted':'NULL AS date_of_birth,NULL AS phone_encrypted,NULL AS email_encrypted,NULL AS address_encrypted';
-  $row=Database::one("SELECT v.id,v.voter_id,v.full_name,v.gender,v.updated_at,$private,m.id AS membership_id,m.member_number,m.official_membership_id,ps.name AS station,ps.station_code,b.name AS branch,c.name AS constituency,r.name AS region FROM voters v LEFT JOIN members m ON m.voter_record_id=v.id LEFT JOIN polling_stations ps ON ps.id=v.polling_station_id LEFT JOIN constituencies c ON c.id=ps.constituency_id LEFT JOIN regions r ON r.id=c.region_id LEFT JOIN electoral_areas b ON b.id=ps.electoral_area_id WHERE v.id=? AND v.deleted_at IS NULL AND ($where)",[$id]);
+  $row=Database::one("SELECT v.id,v.voter_id,v.full_name,v.gender,v.updated_at,$private,m.id AS membership_id,m.member_number,m.official_membership_id,ps.name AS station,ps.station_code,b.name AS branch,c.name AS constituency,r.name AS region$extra FROM voters v LEFT JOIN members m ON m.voter_record_id=v.id LEFT JOIN polling_stations ps ON ps.id=v.polling_station_id LEFT JOIN constituencies c ON c.id=ps.constituency_id LEFT JOIN regions r ON r.id=c.region_id LEFT JOIN electoral_areas b ON b.id=ps.electoral_area_id$residentialJoin WHERE v.id=? AND v.deleted_at IS NULL AND ($where)",[$id]);
   if(!$row){throw new HttpException(404,'Record unavailable in your current jurisdiction.');}
   if(!self::contacts($id)){foreach(['phone_encrypted','email_encrypted','address_encrypted','date_of_birth'] as $key){$row[$key]=null;}}
   return $row;
  }
- public static function listing(array $input): array {
-  $q=Validation::text($input,'q',100,false)??'';$members=($input['page']??'')==='members';
-  $where='v.deleted_at IS NULL AND ('.self::condition().')'.($members?' AND m.id IS NOT NULL':'');$params=[];
-  if($q!==''){$where.=' AND (v.full_name LIKE ? OR v.voter_id LIKE ? OR m.official_membership_id LIKE ?)';$term='%'.strtr($q,['!'=>'!!','%'=>'!%','_'=>'!_']).'%';$where=str_replace('LIKE ?','LIKE ? ESCAPE \'!\'',$where);$params=[$term,$term,$term];}
-  $from=' FROM voters v LEFT JOIN members m ON m.voter_record_id=v.id';
-  $total=(int)Database::scalar('SELECT COUNT(*)'.$from.' WHERE '.$where,$params);
-  $last=max(1,(int)ceil($total/25));$p=min($last,max(1,(int)($input['p']??1)));$offset=($p-1)*25;
-  $rows=Database::all('SELECT v.id,v.voter_id,v.full_name,v.gender,m.id AS membership_id,m.member_number,m.official_membership_id'.$from.' WHERE '.$where.' ORDER BY v.full_name,v.id LIMIT 25 OFFSET '.$offset,$params);
-  return compact('rows','total','last','p','q','members');
+ public static function appointmentCondition(string $alias='a'): string {
+  if(!preg_match('/\A[a-z]+\z/D',$alias)){throw new \LogicException('Invalid internal office alias.');}
+  $account=self::account();if(!$account){return '1=1';}
+  if(!$account['enabled']||!$account['member_id']||!OrganizationService::ready()){return '1=0';}
+  $member=(int)$account['member_id'];
+  $grants=!empty($account['preset_managed'])?' AND EXISTS(SELECT 1 FROM executive_appointment_access ga WHERE ga.appointment_id=ea.id AND ga.user_id='.(int)$account['user_id'].' AND ga.enabled=1)':'';
+  return "EXISTS(SELECT 1 FROM executive_appointments ea JOIN members em ON em.id=ea.member_id JOIN voters ev ON ev.id=em.voter_record_id WHERE em.id=$member AND em.status='active' AND ev.deleted_at IS NULL AND ev.is_deceased=0 AND ea.starts_on<=UTC_DATE() AND ea.ended_on IS NULL AND ea.cancelled_at IS NULL$grants AND (ea.organization_scope='main' OR (ea.organization_scope=$alias.organization_scope AND EXISTS(SELECT 1 FROM member_wing_enrollments w WHERE w.member_id=em.id AND w.wing_code=ea.organization_scope AND w.ended_on IS NULL))) AND (ea.organization_level='national' OR (ea.organization_level='region' AND $alias.region_id=ea.jurisdiction_id) OR (ea.organization_level='constituency' AND $alias.constituency_id=ea.jurisdiction_id) OR (ea.organization_level='branch' AND (($alias.organization_level='branch' AND $alias.jurisdiction_id=ea.jurisdiction_id) OR ($alias.organization_level='polling_station' AND EXISTS(SELECT 1 FROM polling_stations office_station WHERE office_station.id=$alias.polling_station_id AND office_station.electoral_area_id=ea.jurisdiction_id)))) OR (ea.organization_level='polling_station' AND $alias.organization_level='polling_station' AND $alias.polling_station_id=ea.jurisdiction_id)))";
  }
  public static function dispatch(string $page): bool {
   if(!self::restricted()){return false;}
-  if(in_array($page,['account','voter_photo','security_confirm','branch_voter_edit','membership_nominations','membership_nomination'],true)){return false;}
-  if($page==='dashboard'){$data=self::listing(['page'=>'voters']);$memberData=self::listing(['page'=>'members']);View::render('security/executive/dashboard',['voters'=>$data['total'],'members'=>$memberData['total'],'access'=>self::account()],'My jurisdiction');return true;}
-  if(in_array($page,['voters','members'],true)){View::render('security/executive/index',self::listing($_GET),'My jurisdiction records');return true;}
+  if(in_array($page,['account','voter_photo','security_confirm','branch_voter_edit','membership_nominations','membership_nomination','reports','reports_print'],true)){return false;}
+  if($page==='dashboard'){View::render('security/executive/dashboard',\App\Security\Workspace\ExecutiveWorkspace::overview(),'Executive workspace');return true;}
+  if(in_array($page,['voters','members'],true)){View::render('security/executive/people/index',\App\Security\Workspace\ExecutivePeople::listing($_GET),$page==='members'?'Members in my jurisdiction':'Voters in my jurisdiction');return true;}
   if(in_array($page,['voter','member'],true)){
    $id=Validation::id($_GET,'id');if($page==='member'){$id=(int)Database::scalar('SELECT voter_record_id FROM members WHERE id=?',[$id]);}
-   View::render('security/executive/show',['person'=>self::person($id),'access'=>self::account()],'Record details');return true;
+   $person=self::person($id);
+   if($page==='voter'&&$person['membership_id']){\redirect('member',['id'=>$person['membership_id']]);}
+   View::render($person['membership_id']?'security/executive/members/show':'security/executive/voters/show',\App\Security\Workspace\ExecutivePeople::profile($person),$person['membership_id']?'Member profile':'Voter profile');return true;
   }
   throw new HttpException(403,'This page is unavailable for executive access. Use My jurisdiction, Voters or Members.');
  }
  public static function guardPost(string $action): void {
-  if(self::restricted()&&!in_array($action,['logout','password_change','security_confirm','executive_flag','executive_data_csv','branch_contact_save','membership_nominate','membership_decide'],true)){throw new HttpException(403,'Executive accounts cannot directly change records.');}
+  if(self::restricted()&&!in_array($action,['logout','password_change','security_confirm','executive_flag','executive_data_csv','branch_contact_save','membership_nominate','membership_decide','people_report_csv'],true)){throw new HttpException(403,'Executive accounts cannot directly change records.');}
  }
  public static function export(): never {
   if(!self::restricted()||!self::account()['enabled']||!self::account()['can_export']){throw new HttpException(403,'Export access has not been granted.');}

@@ -90,6 +90,19 @@ final class BranchWorkflow
   if(self::permitted('can_nominate')){$parts[]='(n.nominated_by_user_id='.(int)Auth::user()['id'].' AND ('.self::scope('nomination').'))';}
   return $parts?'v.deleted_at IS NULL AND ('.implode(' OR ',$parts).')':'1=0';
  }
+ public static function reportScope(): string {
+  Auth::requireLogin();return !ExecutiveAccess::restricted()&&Auth::canManage()?'1=1':self::nominationScope();
+ }
+ public static function workspaceData(): array {
+  $empty=['available'=>false,'pending'=>0,'actionable'=>0,'own_pending'=>0,'approved'=>0,'rows'=>[]];
+  if(!self::ready()||(!self::permitted('can_nominate')&&!self::permitted('can_approve_membership'))){return $empty;}
+  $actor=(int)Auth::user()['id'];$scope=self::nominationScope();
+  $actionable=self::permitted('can_approve_membership')?"n.nominated_by_user_id<>$actor AND v.deleted_at IS NULL AND v.is_deceased=0 AND NOT EXISTS(SELECT 1 FROM members mm WHERE mm.voter_record_id=v.id) AND (".ExecutiveAccess::condition('v','constituency','can_approve_membership').')':'1=0';
+  $from=' FROM membership_nominations n LEFT JOIN voters v ON v.id=n.voter_record_id';
+  $totals=Database::one("SELECT COALESCE(SUM(n.status='pending'),0) AS pending,COALESCE(SUM(n.status='pending' AND ($actionable)),0) AS actionable,COALESCE(SUM(n.status='pending' AND n.nominated_by_user_id=$actor),0) AS own_pending,COALESCE(SUM(n.status='approved'),0) AS approved$from WHERE $scope")??[];
+  $rows=Database::all("SELECT n.id,n.voter_name_snapshot,n.created_at,($actionable) AS actionable$from WHERE n.status='pending' AND ($scope) ORDER BY actionable DESC,n.created_at,n.id LIMIT 5");
+  return ['available'=>true,'rows'=>$rows]+array_map('intval',$totals);
+ }
  public static function listing(array $input): void {
   Auth::requireLogin();if(!self::ready()){throw new \InvalidArgumentException('Import migration 26 in phpMyAdmin first.');}
   if(!Auth::admin()&&!self::permitted('can_nominate')&&!self::permitted('can_approve_membership')){throw new HttpException(403,'Nomination access is required.');}

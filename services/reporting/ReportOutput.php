@@ -10,7 +10,13 @@ final class ReportOutput
   if($total>self::MAX_ROWS){throw new \InvalidArgumentException('This report exceeds 5,000 rows. Narrow the filters before printing or exporting.');}
  }
  public static function csv(array $report,string $filename): never {
-  Auth::requireRole(['admin','registrar']);self::checkSize((int)$report['total']);self::checkSize(count($report['records']));
+  Auth::requireRole(['admin','registrar']);self::outputCsv($report,$filename);
+ }
+ public static function peopleCsv(array $report,string $filename): never {
+  PeopleReports::requireExport();self::outputCsv($report,$filename);
+ }
+ private static function outputCsv(array $report,string $filename): never {
+  self::checkSize((int)$report['total']);self::checkSize(count($report['records']));
   if(!preg_match('/\A[a-z0-9-]+\z/D',$filename)){throw new \LogicException('Invalid internal report filename.');}
   Auth::audit('report.csv_generated','report',null,['kind'=>$filename,'records'=>count($report['records'])]);
   header('Content-Type: text/csv; charset=utf-8');
