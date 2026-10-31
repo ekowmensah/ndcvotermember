@@ -10,6 +10,7 @@ final class Controller
   Auth::requireLogin();
   if(\App\Security\ExecutiveAccess::dispatch($page)){return;}
   switch($page){
+   case 'staff_member_details': Auth::requireRole(['admin']);$details=\App\Security\StaffIdentity::details(Validation::id($_GET,'id'));header('Content-Type: application/json; charset=utf-8');echo json_encode($details,JSON_THROW_ON_ERROR);exit;
    case 'executive_account': \App\Security\AppointmentAccounts::page(Validation::id($_GET,'id'));break;
    case 'branch_voter_edit': case 'membership_nominations': case 'membership_nomination': \App\Membership\BranchWorkflowController::get($page);break;
    case 'security_confirm': View::render('security/auth/confirm',[],'Confirm password');break;

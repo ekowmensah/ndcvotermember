@@ -18,6 +18,11 @@ final class StaffIdentity
   // Legacy accounts remain available solely for deliberate administrator linking.
   return $row&&(!$row['member_id']||($row['found_member']&&!$row['is_deceased']&&!$row['deleted_at']));
  }
+ public static function details(int $member): array {
+  Auth::requireRole(['admin']);
+  $row=Database::one('SELECT v.full_name,v.email_encrypted FROM members m JOIN voters v ON v.id=m.voter_record_id WHERE m.id=? AND v.deleted_at IS NULL AND v.is_deceased=0',[$member])??throw new HttpException(404,'Member unavailable.');
+  return ['name'=>$row['full_name'],'email'=>\App\Crypto::decrypt($row['email_encrypted'])];
+ }
  public static function member(int $id): void {
   $person=Database::scalar('SELECT voter_record_id FROM members WHERE id=?',[$id]);
   if(!$person){throw new \InvalidArgumentException('Choose an existing member for this account.');}
