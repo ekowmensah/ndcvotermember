@@ -16,6 +16,11 @@ final class StaffService
   $accessColumns=ExecutiveAccess::ready()?',ea.access_role AS executive_role,ea.enabled AS executive_enabled':',NULL AS executive_role,NULL AS executive_enabled';
   $accessJoin=ExecutiveAccess::ready()?' LEFT JOIN staff_executive_access ea ON ea.user_id=u.id':'';
   $rows=Database::all('SELECT u.id,u.name,u.email,u.role,u.is_active,u.session_version,u.last_login_at,u.created_at'.$accessColumns.' FROM app_users u'.$accessJoin.$where.' ORDER BY u.name,u.id LIMIT 25 OFFSET '.$offset,$params);
+  if($rows&&AppointmentAccounts::ready()){
+   $ids=array_column($rows,'id');$marks=implode(',',array_fill(0,count($ids),'?'));
+   $effective=Database::all("SELECT p.user_id,COALESCE(MAX(CASE WHEN u.member_id=a.member_id AND ".AppointmentAccounts::currentSql()." THEN g.access_role='reviewer' ELSE 0 END),0) AS reviewer FROM executive_preset_accounts p JOIN app_users u ON u.id=p.user_id LEFT JOIN executive_appointment_access g ON g.user_id=p.user_id LEFT JOIN executive_appointments a ON a.id=g.appointment_id WHERE p.user_id IN ($marks) GROUP BY p.user_id",$ids);
+   $byUser=array_column($effective,'reviewer','user_id');foreach($rows as &$row){if(array_key_exists($row['id'],$byUser)){$row['executive_role']=$byUser[$row['id']]?'reviewer':'viewer';}}unset($row);
+  }
   return compact('rows','q','total','p','last');
  }
  public static function editor(?int $id): array {
@@ -23,6 +28,7 @@ final class StaffService
   $staff=$id?Database::one('SELECT id,name,email,role,is_active,session_version'.(StaffIdentity::ready()?',member_id':',NULL AS member_id').' FROM app_users WHERE id=?',[$id]):null;
   if($id&&!$staff){throw new HttpException(404,'Staff account not found.');}
   $executiveAccount=$id&&ExecutiveAccess::ready()?Database::one('SELECT * FROM staff_executive_access WHERE user_id=?',[$id]):null;
+  if($executiveAccount&&AppointmentAccounts::managed($id)){$effective=AppointmentAccounts::effective($id);$executiveAccount['access_role']=$effective['reviewer']?'reviewer':'viewer';}
   return ['staff'=>$staff,'roles'=>self::ROLES,'executiveAccount'=>$executiveAccount];
  }
  public static function save(array $input): void {

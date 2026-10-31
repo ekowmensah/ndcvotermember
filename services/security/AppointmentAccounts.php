@@ -69,6 +69,7 @@ final class AppointmentAccounts
   Database::transaction(function()use($input,$id,$revision,$role):void{
    self::lockAdmin();$row=Database::one('SELECT g.*,a.organization_scope,a.organization_level FROM executive_appointment_access g JOIN executive_appointments a ON a.id=g.appointment_id WHERE g.appointment_id=? FOR UPDATE',[$id]);
    if(!$row||(int)$row['revision']!==$revision){throw new \InvalidArgumentException('Appointment access changed. Refresh before saving.');}
+   if((int)$row['user_id']!==Validation::id($input,'id')){throw new \InvalidArgumentException('Account and appointment access do not match. Reopen the account.');}
    $grant=self::defaults($row['organization_level'],$row['organization_scope']);$values=[];
    foreach(self::CAPABILITIES as $cap){$value=isset($input[$cap]);if($value&&($cap!=='can_contacts'&&($role!=='reviewer'||!$grant[$cap]))){throw new \InvalidArgumentException('This capability is not permitted for this office and access role.');}$values[]=(int)$value;}
    if($values[1]&&!$values[0]){throw new \InvalidArgumentException('Contact editing also requires contact access.');}

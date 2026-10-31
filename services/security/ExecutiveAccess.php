@@ -26,6 +26,10 @@ final class ExecutiveAccess
   if($voter!==null&&!empty(self::account()['preset_managed'])){return (bool)Database::scalar('SELECT v.id FROM voters v WHERE v.id=? AND ('.self::condition('v',null,'can_contacts').')',[$voter]);}
   return true;
  }
+ public static function canReview(int $voter): bool {
+  if(!self::restricted()||self::account()['access_role']!=='reviewer'){return false;}
+  return (bool)Database::scalar('SELECT v.id FROM voters v WHERE v.id=? AND v.deleted_at IS NULL AND ('.self::condition('v',null,'review').')',[$voter]);
+ }
  public static function condition(string $alias='v',?string $level=null,?string $capability=null): string {
   if(!preg_match('/\A[a-z]+\z/D',$alias)){throw new \LogicException('Invalid internal alias.');}
   $account=self::account();if(!$account){return '1=1';}
@@ -34,9 +38,9 @@ final class ExecutiveAccess
   if($level!==null&&!in_array($level,['branch','constituency','polling_station'],true)){throw new \LogicException('Invalid permission level.');}
   $office=$level!==null?" AND ea.organization_scope='main' AND ea.organization_level='$level'":'';
   if(!empty($account['preset_managed'])){
-   if($capability!==null&&!in_array($capability,AppointmentAccounts::CAPABILITIES,true)){throw new \LogicException('Invalid internal capability.');}
+   if($capability!==null&&!in_array($capability,[...AppointmentAccounts::CAPABILITIES,'review'],true)){throw new \LogicException('Invalid internal capability.');}
    $review=$capability!==null&&$capability!=='can_contacts'?" AND ag.access_role='reviewer'":'';
-   $permission=$capability!==null?" AND ag.$capability=1":'';
+   $permission=$capability!==null&&$capability!=='review'?" AND ag.$capability=1":'';
    $office.=' AND EXISTS(SELECT 1 FROM executive_appointment_access ag WHERE ag.appointment_id=ea.id AND ag.user_id='.(int)$account['user_id'].' AND ag.enabled=1'.$permission.$review.')';
   }
   // Derive geography from the actual polling station, including optional branch.
@@ -89,6 +93,7 @@ final class ExecutiveAccess
   $id=Validation::id($input,'voter_id');$note=Validation::text($input,'note',1000);
   Database::transaction(function()use($id,$note):void{
    self::person($id);
+   if(!self::canReview($id)){throw new HttpException(403,'Reviewer permission is not granted for this record’s jurisdiction.');}
    $actor=(int)Auth::user()['id'];
    // A small per-user quota prevents accidental rapid repeats without retaining form content.
    if((int)Database::scalar('SELECT COUNT(*) FROM record_review_flags WHERE raised_by_user_id=? AND created_at>UTC_TIMESTAMP()-INTERVAL 1 HOUR',[$actor])>=30){throw new \InvalidArgumentException('Review limit reached. Please try again later.');}

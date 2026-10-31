@@ -86,7 +86,7 @@ final class BranchWorkflow
  private static function nominationScope(): string {
   if(Auth::admin()){return '1=1';}
   $parts=[];
-  if(self::permitted('can_approve_membership')){$parts[]='('.ExecutiveAccess::condition('v','constituency').')';}
+  if(self::permitted('can_approve_membership')){$parts[]='('.ExecutiveAccess::condition('v','constituency','can_approve_membership').')';}
   if(self::permitted('can_nominate')){$parts[]='(n.nominated_by_user_id='.(int)Auth::user()['id'].' AND ('.self::scope('nomination').'))';}
   return $parts?'v.deleted_at IS NULL AND ('.implode(' OR ',$parts).')':'1=0';
  }
