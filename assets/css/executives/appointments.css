@@ -1,0 +1,7 @@
+[data-executive-appointment]>.card{overflow:visible}
+[data-executive-appointment]>.card>.card-header{border-radius:10px 10px 0 0}
+[data-executive-appointment] .ts-wrapper{width:100%}
+[data-executive-appointment] .ts-control{min-height:42px;background:var(--bs-body-bg);color:var(--bs-body-color);border-color:var(--bs-border-color)}
+[data-executive-appointment] .ts-dropdown,[data-executive-appointment] .dropdown-input{background:var(--bs-body-bg);color:var(--bs-body-color);border-color:var(--bs-border-color)}
+[data-executive-appointment] .ts-dropdown{z-index:1060}
+[data-executive-appointment] .ts-dropdown .active{background:var(--bs-tertiary-bg);color:var(--bs-body-color)}

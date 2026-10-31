@@ -1,0 +1,3 @@
+<?php $pendingCsv=\App\CsvPreviewService::pending($csvKind);if($pendingCsv): ?>
+<section class="card directory-panel mb-4"><div class="card-header"><h2 class="card-title">Pending reviews</h2><span class="small text-secondary">Nothing saved yet</span></div><div class="card-body"><?php foreach($pendingCsv as $pendingUpload): ?><div class="csv-pending-row"><div><strong><?= e($pendingUpload['filename']) ?></strong><span class="small text-secondary"><?= number($pendingUpload['rows']) ?> records · expires <?= e(gmdate('H:i',$pendingUpload['expires'])) ?> UTC</span></div><a class="btn btn-sm btn-outline-primary" href="<?= e(url('csv_preview',['token'=>$pendingUpload['token']])) ?>">Resume review</a></div><?php endforeach; ?></div></section>
+<?php endif; ?>

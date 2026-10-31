@@ -1,0 +1,3 @@
+<?php if($membersOnly): foreach($memberExecutiveRoles[(int)$person['membership_id']][$memberRoleLevel]??[] as $memberRole): ?>
+<div class="border-start border-success ps-2 mt-2 small"><a class="fw-semibold" href="<?= e(url('executive_appointment',['id'=>$memberRole['id']])) ?>"><i class="bi bi-person-badge me-1" aria-hidden="true"></i><?= $memberRole['appointment_type']==='acting'?'Acting · ':'' ?><?= e($memberRole['position_name_snapshot']) ?></a><small class="d-block text-secondary"><?= e(\App\Executives\OrganizationService::label($memberRole)) ?> &middot; <?= e($memberRole['jurisdiction_snapshot']) ?></small></div>
+<?php endforeach; endif; ?>

@@ -1,0 +1,6 @@
+<section class="card member-panel mb-4" id="member-background" aria-labelledby="member-background-title"><div class="card-header"><div><span class="member-section-kicker">EXPERIENCE &amp; PARTICIPATION</span><h2 class="card-title" id="member-background-title">Member background</h2></div><?php if($canManage&&$profileReady): ?><a class="no-print" href="<?= e($personEditUrl.'#member-edit-background') ?>">Edit background <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a><?php endif; ?></div><div class="card-body">
+<?php if(!$profileReady): ?><p class="text-secondary mb-0">Member background is not available yet.<?php if($canManage): ?> Enable it by applying migrations 08 and 11 in phpMyAdmin.<?php endif; ?></p><?php else: ?>
+<dl class="member-detail-grid"><?php foreach($background as $title=>$value): ?><div><dt><?= e($title) ?></dt><dd><?= e($value) ?></dd></div><?php endforeach; ?></dl>
+<div class="member-background-tags"><?php foreach($backgroundTags as $title=>$tags): ?><div><h3><?= e($title) ?></h3><div class="member-tags"><?php foreach($tags as $tag): ?><span><?= e($tag) ?></span><?php endforeach; if(!$tags): ?><span class="member-tag-empty">Not recorded</span><?php endif; ?></div></div><?php endforeach; ?></div>
+<?php endif; ?>
+</div></section>

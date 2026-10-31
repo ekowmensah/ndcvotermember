@@ -1,0 +1,5 @@
+<header class="voter-banner">
+<div class="voter-avatar"><?php if(!empty($voter['has_photo'])): ?><img src="<?= e(url('voter_photo',['id'=>$voter['id']])) ?>" alt="Photo of <?= e($voter['full_name']) ?>" width="96" height="112" decoding="async"><?php else: ?><span role="img" aria-label="No voter photo"><?= e(mb_strtoupper(mb_substr($voter['full_name'],0,1))) ?></span><?php endif; ?></div>
+<div class="voter-banner-name"><span class="voter-eyebrow">VOTER RECORD</span><h1><?= e($voter['full_name']) ?></h1><p><?= e($personal['Gender']) ?> <span aria-hidden="true">/</span> <?= !empty($values['town'])?e($values['town']):'Town not recorded' ?></p></div>
+<div class="voter-banner-id"><span>Voter identification number</span><div><strong><?= e($voter['voter_id']) ?></strong><button class="btn btn-sm btn-light no-print" type="button" data-voter-copy="<?= e($voter['voter_id']) ?>" aria-label="Copy voter ID"><i class="bi bi-copy" aria-hidden="true"></i></button></div><small role="status" aria-live="polite" data-voter-copy-status></small></div>
+</header>

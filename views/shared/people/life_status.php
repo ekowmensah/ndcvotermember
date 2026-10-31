@@ -1,0 +1,8 @@
+<?php $return=$person['membership_id']?url('member',['id'=>$person['membership_id']]):url('voter',['id'=>$person['id']]); ?>
+<div class="page-heading"><div><h1>Life status</h1><p><?= e($person['full_name']) ?> · Voter ID <?= e($person['voter_id']) ?></p></div><a class="btn btn-light" href="<?= e($return) ?>">Back to profile</a></div>
+<?php if(!$available): ?><div class="alert alert-info">Import the complete <strong>database/14_deceased_status_mysql8.sql</strong> file in phpMyAdmin first.</div><?php else: ?>
+<section class="card"><div class="card-body"><p>Marking a person deceased preserves their voter record, photo and any membership. This status appears in lists and dashboard statistics. You can correct it later if it was recorded by mistake.</p>
+<form method="post" action="<?= e(url('life_status',['id'=>$person['id']])) ?>"><?= csrf() ?><input type="hidden" name="_action" value="life_status_save"><input type="hidden" name="id" value="<?= e($person['id']) ?>"><input type="hidden" name="membership_id" value="<?= e($person['membership_id']??'') ?>"><input type="hidden" name="version" value="<?= e($person['updated_at']) ?>">
+<?= select_field('life_status','Life status',['not_deceased'=>'Not marked deceased','deceased'=>'Deceased'],$person['is_deceased']?'deceased':'not_deceased') ?>
+<?= input('date_of_death','Date of death (optional)',$person['date_of_death']??'','date',false,'max="'.date('Y-m-d').'"') ?>
+<p class="form-text">Leave the date blank if unknown. Clear it when correcting the status to Not marked deceased.</p><button class="btn btn-primary">Save status</button> <a class="btn btn-light" href="<?= e($return) ?>">Cancel</a></form></div></section><?php endif; ?>

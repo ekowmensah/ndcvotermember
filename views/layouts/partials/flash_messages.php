@@ -1,0 +1,1 @@
+<?php foreach($_SESSION['flashes']??[] as $notice): ?><div class="alert alert-<?= e($notice['type']) ?> alert-dismissible fade show" role="alert"><?= e($notice['message']) ?><button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Close"></button></div><?php endforeach;unset($_SESSION['flashes']);?>

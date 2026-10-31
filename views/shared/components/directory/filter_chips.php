@@ -1,0 +1,1 @@
+<?php if($filterChips): ?><nav class="directory-filter-chips" aria-label="Applied filters"><?php foreach($filterChips as $filterChip): ?><a href="<?= e($filterChip['href']) ?>" aria-label="Remove filter <?= e($filterChip['text']) ?>"><?= e($filterChip['text']) ?><i class="bi bi-x" aria-hidden="true"></i></a><?php endforeach; ?></nav><?php endif; ?>

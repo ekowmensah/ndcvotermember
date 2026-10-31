@@ -1,0 +1,19 @@
+<section class="card member-identity">
+<div class="member-identity-cover" aria-hidden="true"></div>
+<div class="card-body">
+<div class="member-identity-photo"><?php if(!empty($voter['has_photo'])): ?><img src="<?= e(url('voter_photo',['id'=>$voter['id']])) ?>" alt="Photo of <?= e($voter['full_name']) ?>" width="112" height="128" decoding="async"><?php else: ?><span role="img" aria-label="No profile photo"><?= e(mb_strtoupper(mb_substr($voter['full_name'],0,1))) ?></span><?php endif; ?></div>
+<div class="member-identity-status"><?= badge($voter['membership_status']) ?></div>
+<h2><?= e($voter['full_name']) ?></h2>
+<p class="member-identity-profession"><?= e($voter['profession']??'Member') ?></p>
+<dl class="member-identifier-list">
+<div><dt><?= e(member_identifier_label($voter)) ?></dt><dd><strong class="fs-5 <?= trim((string)($voter['official_membership_id']??''))===''?'badge bg-warning text-dark':'' ?>"><?= e(member_identifier($voter)) ?></strong><button class="member-copy no-print" type="button" data-member-copy="<?= e(member_identifier($voter)) ?>" aria-label="Copy primary membership ID"><i class="bi bi-copy" aria-hidden="true"></i></button></dd></div>
+<?php if(trim((string)($voter['official_membership_id']??''))!==''): ?><div class="text-secondary"><dt>Sys No.</dt><dd><span><?= e($voter['member_number']) ?></span><button class="member-copy no-print" type="button" data-member-copy="<?= e($voter['member_number']) ?>" aria-label="Copy system member number"><i class="bi bi-copy" aria-hidden="true"></i></button></dd></div><?php endif; ?>
+<?php if(trim((string)($voter['official_membership_id']??''))===''): ?><div class="small"><dt>Party ID not recorded</dt><dd><?php if($canManage): ?><a href="<?= e($editUrl) ?>">Add Party ID <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a><?php else: ?><span class="text-secondary">Awaiting Party ID update</span><?php endif; ?></dd></div><?php endif; ?>
+<div><dt>Voter ID</dt><dd><span><?= e($voter['voter_id']) ?></span><button class="member-copy no-print" type="button" data-member-copy="<?= e($voter['voter_id']) ?>" aria-label="Copy voter ID"><i class="bi bi-copy" aria-hidden="true"></i></button></dd></div>
+</dl>
+<p class="small text-secondary mb-0" role="status" aria-live="polite" data-member-copy-status></p>
+<div class="member-identity-date"><i class="bi bi-calendar-check" aria-hidden="true"></i><div><span>Member since</span><strong><?= e(date_display($voter['joined_on'])) ?></strong></div></div>
+<div class="member-identity-footer"><span>Internal membership record</span><strong>#<?= e($voter['membership_id']) ?></strong></div>
+</div></section>
+<?php if($suggestions): ?><section class="card member-panel member-follow-up no-print"><div class="card-body"><h2 class="h6"><i class="bi bi-list-check me-2" aria-hidden="true"></i>Enrich this profile</h2><p class="small text-secondary">Optional details for easier identification and follow-up.</p><ul><?php foreach($suggestions as [$text,$href]): ?><li><a href="<?= e($href) ?>"><span><?= e($text) ?></span><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></li><?php endforeach; ?></ul></div></section><?php endif; ?>
+<section class="card member-panel"><div class="card-body"><h2 class="h6">Record information</h2><dl class="member-record-meta"><div><dt>Membership saved</dt><dd><?= e(date_display($metadata['created_at']??null,true)) ?></dd></div><?php if(!empty($voter['membership_version'])): ?><div><dt>Membership last updated</dt><dd><?= e(date_display($voter['membership_version'],true)) ?></dd></div><?php endif; ?><?php if($canManage): ?><div><dt>Enrolled by</dt><dd><?= e($metadata['enrolled_by']??'Not recorded') ?></dd></div><?php endif; ?><div><dt>Voter record created</dt><dd><?= e(date_display($voter['created_at']??null)) ?></dd></div></dl><p class="small text-secondary mb-0">Times shown in UTC.</p></div></section>

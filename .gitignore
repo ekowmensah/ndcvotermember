@@ -1,0 +1,10 @@
+/.env
+/vendor/
+/node_modules/
+/storage/*
+!/storage/.gitkeep
+!/storage/.htaccess
+/.local-credentials
+/tests/.runtime/
+/.phpunit.cache/
+

@@ -1,0 +1,1 @@
+<footer class="app-footer"><span class="ndc-footer-label">NDC &middot; Voters &amp; Membership</span><span>National Democratic Congress &middot; Ghana</span></footer>

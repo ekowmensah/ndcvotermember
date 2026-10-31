@@ -1,0 +1,1 @@
+<?php if(\App\Executives\OrganizationService::ready()): ?><div class="col-md-6"><?= select_field('organization_scope','Organization',[''=>'All organizations']+\App\Executives\OrganizationService::SCOPES,$filters['organization_scope']??'') ?></div><?php endif; ?>
