@@ -2,6 +2,17 @@
 declare(strict_types=1);
 // Phase 1 only. Legacy workflow files are intentionally not loaded.
 return [
+ 'App\\Security\\AppointmentAccounts'=>'services/security/AppointmentAccounts.php',
+ 'App\\Security\\SystemHealth'=>'services/security/SystemHealth.php',
+ 'App\\Membership\\EnrollmentWriter'=>'services/membership/EnrollmentWriter.php',
+ 'App\\Membership\\BranchWorkflow'=>'services/membership/BranchWorkflow.php',
+ 'App\\Membership\\BranchWorkflowController'=>'controllers/membership/BranchWorkflowController.php',
+ 'App\\Security\\SessionSecurity'=>'services/security/SessionSecurity.php',
+ 'App\\Security\\StaffIdentity'=>'services/security/StaffIdentity.php',
+ 'App\\Security\\ExecutiveAccess'=>'services/security/ExecutiveAccess.php',
+ 'App\\Security\\ExecutiveAccessAdmin'=>'services/security/ExecutiveAccessAdmin.php',
+ 'App\\Security\\StaffService'=>'services/security/StaffService.php',
+ 'App\\Security\\StaffController'=>'controllers/security/StaffController.php',
  'App\\Reporting\\ReportOutput'=>'services/reporting/ReportOutput.php',
  'App\\Membership\\WingReportService'=>'services/membership/WingReportService.php',
  'App\\Membership\\WingScopeService'=>'services/membership/WingScopeService.php',

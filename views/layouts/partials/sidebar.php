@@ -36,7 +36,13 @@ if(Auth::canManage()){
   ]]
  ]];
 }
+if(Auth::admin()){$groups[]=['label'=>'Administration','items'=>[$item('staff','bi-shield-lock','Staff accounts',in_array($currentPage,['staff','staff_edit'],true)),$item('security_activity','bi-shield-check','Security activity',$currentPage==='security_activity'),$item('system_health','bi-heart-pulse','System health',$currentPage==='system_health')]];}
 $groups[]=['label'=>'Personal','items'=>[$item('account','bi-person-gear','My account',$currentPage==='account')]];
+if(Auth::canManage()&&\App\Security\ExecutiveAccess::ready()){$groups[]=['label'=>'Reviews','items'=>[$item('record_reviews','bi-clipboard-check','Record reviews',$currentPage==='record_reviews')]];}
+if(\App\Security\ExecutiveAccess::restricted()){
+ $groups=[['label'=>'Executive workspace','items'=>[$item('dashboard','bi-grid-1x2','My jurisdiction',$currentPage==='dashboard'),$item('voters','bi-person-lines-fill','Voters',in_array($currentPage,['voters','voter'],true)),$item('members','bi-people','Members',in_array($currentPage,['members','member'],true))]],['label'=>'Personal','items'=>[$item('account','bi-person-gear','My account',$currentPage==='account')]]];
+}
+if(\App\Membership\BranchWorkflow::ready()&&(Auth::admin()||\App\Membership\BranchWorkflow::permitted('can_nominate')||\App\Membership\BranchWorkflow::permitted('can_approve_membership'))){$groups[]=['label'=>'Membership review','items'=>[$item('membership_nominations','bi-person-check','Nominations',in_array($currentPage,['membership_nominations','membership_nomination'],true))]];}
 ?>
 <aside class="app-sidebar bg-sidebar shadow-sm">
 <div class="sidebar-brand"><a class="brand-link" href="<?= e(url()) ?>"><img class="brand-image" src="<?= e(asset('img/ndc-ghana-logo.svg')) ?>" alt=""><span class="ndc-wordmark"><strong>NDC Workspace</strong><small>Voters &amp; Membership</small></span></a></div>

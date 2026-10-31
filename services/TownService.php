@@ -75,7 +75,7 @@ final class TownService
  }
  public static function catalog(): array {
   if(!self::ready()){return [];}
-  return Database::all('SELECT t.id,t.name,t.residential_region_id,t.district_id,r.name AS region_name,d.name AS district_name,(SELECT COUNT(*) FROM voters v WHERE v.residential_town_id=t.id AND '.\App\Voters\TrashService::active().') AS voter_count FROM residential_towns t LEFT JOIN residential_regions r ON r.id=t.residential_region_id LEFT JOIN districts d ON d.id=t.district_id ORDER BY t.name,r.name,d.name,t.id');
+  return Database::all('SELECT t.id,t.name,t.residential_region_id,t.district_id,r.name AS region_name,d.name AS district_name,(SELECT COUNT(*) FROM voters v WHERE v.residential_town_id=t.id AND '.\App\Voters\TrashService::active().' AND ('.\App\Security\ExecutiveAccess::condition().')) AS voter_count FROM residential_towns t LEFT JOIN residential_regions r ON r.id=t.residential_region_id LEFT JOIN districts d ON d.id=t.district_id ORDER BY t.name,r.name,d.name,t.id');
  }
  public static function directory(array $input): array {
   if(!self::ready()){return ['available'=>false];}
@@ -83,7 +83,7 @@ final class TownService
   $q=Validation::text($input,'q',180,false);if($q!==null){$filters['q']=$q;$where.=" AND t.name LIKE ? ESCAPE '!'";$params[]='%'.strtr($q,['!'=>'!!','%'=>'!%','_'=>'!_']).'%';}
   foreach(['residential_region_filter'=>'t.residential_region_id','residential_district_filter'=>'t.district_id'] as $key=>$column){if(!empty($input[$key])){$filters[$key]=Validation::id($input,$key);$where.=" AND $column=?";$params[]=$filters[$key];}}
   $total=(int)Database::scalar('SELECT COUNT(*) FROM residential_towns t WHERE '.$where,$params);$last=max(1,(int)ceil($total/25));$townPage=min($last,max(1,(int)($input['p']??1)));$offset=($townPage-1)*25;
-  $rows=Database::all('SELECT t.id,t.name,r.name AS region_name,d.name AS district_name,(SELECT COUNT(*) FROM voters v WHERE v.residential_town_id=t.id AND '.\App\Voters\TrashService::active().') AS voter_count FROM residential_towns t LEFT JOIN residential_regions r ON r.id=t.residential_region_id LEFT JOIN districts d ON d.id=t.district_id WHERE '.$where." ORDER BY t.name,r.name,d.name,t.id LIMIT 25 OFFSET $offset",$params);
+  $rows=Database::all('SELECT t.id,t.name,r.name AS region_name,d.name AS district_name,(SELECT COUNT(*) FROM voters v WHERE v.residential_town_id=t.id AND '.\App\Voters\TrashService::active().' AND ('.\App\Security\ExecutiveAccess::condition().')) AS voter_count FROM residential_towns t LEFT JOIN residential_regions r ON r.id=t.residential_region_id LEFT JOIN districts d ON d.id=t.district_id WHERE '.$where." ORDER BY t.name,r.name,d.name,t.id LIMIT 25 OFFSET $offset",$params);
   return ['available'=>true]+compact('catalog','filters','total','last','townPage','rows');
  }
 }

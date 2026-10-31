@@ -1,0 +1,28 @@
+# Optional MANUAL Apache virtual-host configuration. Do not replace a live host
+# before saving its configuration. No credentials belong in this file.
+<VirtualHost *:80>
+    ServerName ndcvotermember.test
+    DocumentRoot "C:/laragon/www/ndcvotermember/public"
+    <Directory "C:/laragon/www/ndcvotermember">
+        Require all denied
+    </Directory>
+    <Directory "C:/laragon/www/ndcvotermember/public">
+        AllowOverride None
+        Options -Indexes
+        DirectoryIndex index.php
+        Require all granted
+        <FilesMatch "^(?!index\.php$).*\.php$">
+            Require all denied
+        </FilesMatch>
+    </Directory>
+    Alias /assets "C:/laragon/www/ndcvotermember/assets"
+    <Directory "C:/laragon/www/ndcvotermember/assets">
+        AllowOverride None
+        Options -Indexes
+        Require all granted
+        <FilesMatch "\.(php[0-9]?|phtml|phar|sql|ini|log|env)$">
+            Require all denied
+        </FilesMatch>
+    </Directory>
+</VirtualHost>
+# Local HTTP example only. Configure TLS separately before remote deployment.

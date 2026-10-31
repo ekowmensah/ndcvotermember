@@ -5,9 +5,19 @@ final class Controller
 {
  public function get(): void {
   $page=(string)($_GET['page']??'dashboard');
+  if($page==='activate_account'){View::render('auth/activate',[],'Activate account');return;}
   if($page==='login'){if(Auth::user()){redirect('dashboard');}View::render('auth/login',[],'Sign in');return;}
   Auth::requireLogin();
+  if(\App\Security\ExecutiveAccess::dispatch($page)){return;}
   switch($page){
+   case 'executive_account': \App\Security\AppointmentAccounts::page(Validation::id($_GET,'id'));break;
+   case 'branch_voter_edit': case 'membership_nominations': case 'membership_nomination': \App\Membership\BranchWorkflowController::get($page);break;
+   case 'security_confirm': View::render('security/auth/confirm',[],'Confirm password');break;
+   case 'security_activity': \App\Security\SessionSecurity::activity($_GET);break;
+   case 'system_health': \App\Security\SystemHealth::show();break;
+   case 'record_reviews': \App\Security\ExecutiveAccessAdmin::reviews();break;
+   case 'staff': \App\Security\StaffController::get();break;
+   case 'staff_edit': \App\Security\StaffController::get(true);break;
    case 'wing_report_print': \App\Membership\WingController::report($_GET);break;
    case 'wing_candidates': View::render('membership/wings/candidates',\App\Membership\WingEligibilityService::candidates($_GET),'Wing eligibility suggestions');break;
    case 'wing_history': View::render('membership/wings/history',\App\Membership\WingHistoryService::page($_GET),'Wing participation history');break;
@@ -55,11 +65,39 @@ final class Controller
  }
  public function post(): never {
   $action=Validation::text($_POST,'_action',60);
+  if($action==='activate_account'){
+   try{\App\Security\AppointmentAccounts::activate($_POST);flash('success','Account activated. Sign in with your email and password.');redirect('login');}
+   catch(\InvalidArgumentException $error){flash('danger',$error->getMessage());redirect('activate_account');}
+  }
   if($action==='login'){
    try {if(!Auth::login(Validation::email($_POST,'email'),(string)($_POST['password']??''))){throw new \InvalidArgumentException('Email or password is incorrect.');}redirect('dashboard');}
    catch(\InvalidArgumentException $e){flash('danger',$e->getMessage());redirect('login');}
   }
   Auth::requireLogin();if($action==='logout'){Auth::logout();redirect('login');}
+  \App\Security\ExecutiveAccess::guardPost($action);
+  if($action==='security_confirm'){\App\Security\SessionSecurity::confirm();}
+  \App\Security\SessionSecurity::guard($action,$_POST);
+  if(in_array($action,['appointment_activation_issue','appointment_grant_save'],true)){
+   Auth::requireRole(['admin']);
+   try{if($action==='appointment_activation_issue'){\App\Security\AppointmentAccounts::issue(Validation::id($_POST,'id'));}else{\App\Security\AppointmentAccounts::saveGrant($_POST);}flash('success','Appointment account settings saved.');}
+   catch(\InvalidArgumentException $error){flash('danger',$error->getMessage());}
+   catch(\PDOException $error){error_log((string)$error);flash('danger','No changes were saved. Refresh and try again.');}
+   redirect('executive_account',['id'=>Validation::id($_POST,'id')]);
+  }
+  if(in_array($action,['branch_contact_save','membership_nominate','membership_decide'],true)){\App\Membership\BranchWorkflowController::post($action);}
+  if($action==='executive_data_csv'){\App\Security\ExecutiveAccess::export();}
+  if(in_array($action,['executive_access_save','executive_flag','review_resolve','staff_member_link'],true)){
+   try{
+    if($action==='staff_member_link'){\App\Security\StaffIdentity::link($_POST);}
+    elseif($action==='executive_access_save'){\App\Security\ExecutiveAccessAdmin::save($_POST);}
+    elseif($action==='executive_flag'){\App\Security\ExecutiveAccess::flag($_POST);}
+    else{\App\Security\ExecutiveAccessAdmin::resolve($_POST);}
+    flash('success','Saved successfully.');
+   }catch(\InvalidArgumentException $error){flash('danger',$error->getMessage());}
+   catch(\PDOException $error){error_log((string)$error);flash('danger','Unable to save. No changes were made.');}
+   redirect(in_array($action,['executive_access_save','staff_member_link'],true)?'staff':($action==='review_resolve'?'record_reviews':'voters'));
+  }
+  if($action==='staff_save'){\App\Security\StaffController::save();}
   if($action==='wing_report_csv'){\App\Membership\WingController::report($_POST,true);exit;}
   if($action==='wing_save'){\App\Membership\WingController::save();}
   if(in_array($action,['executive_term_save','executive_term_assign','executive_recognition_save','executive_report_csv'],true)){\App\Executives\ToolsController::post($action);}
@@ -184,9 +222,6 @@ final class Controller
   $_SESSION['voter_form']=Crypto::encrypt(json_encode($values,JSON_THROW_ON_ERROR));
  }
  private function password(): void {
-  $id=Auth::user()['id'];$hash=Database::scalar('SELECT password_hash FROM app_users WHERE id=?',[$id]);
-  if(!password_verify((string)($_POST['current_password']??''),$hash)){throw new \InvalidArgumentException('Your current password is incorrect.');}
-  $password=(string)($_POST['password']??'');if(strlen($password)<12||strlen($password)>128||$password!==($_POST['password_confirmation']??'')){throw new \InvalidArgumentException('Passwords must match and contain 12–128 characters.');}
-  Database::execute('UPDATE app_users SET password_hash=?,session_version=session_version+1 WHERE id=?',[password_hash($password,PASSWORD_ARGON2ID),$id]);$_SESSION['session_version']=(int)Auth::user()['session_version']+1;session_regenerate_id(true);
+  \App\Security\SessionSecurity::changePassword($_POST);
  }
 }

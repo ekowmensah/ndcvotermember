@@ -18,6 +18,7 @@ final class Repository
  public static function voters(bool $membersOnly=false,?array $input=null): array {
   $input??=$_GET;
   $where=($membersOnly?'m.id IS NOT NULL AND ':' ').\App\Voters\TrashService::active();$params=[];
+  $where.=' AND ('.\App\Security\ExecutiveAccess::condition().')';
   $filters=[];
   if($membersOnly&&Validation::text($input,'wing',20,false)!==null){
    if(!\App\Membership\WingService::ready()){throw new \InvalidArgumentException('Import database/20_membership_wings_mysql8.sql in phpMyAdmin before filtering by wing.');}
@@ -105,6 +106,7 @@ final class Repository
   return ['rows'=>$rows,'memberExecutiveRoles'=>$memberExecutiveRoles,'total'=>$total,'summary'=>$summary,'filters'=>$filters,'listingPage'=>$listingPage,'lastPage'=>$lastPage,'perPage'=>$perPage,'locationCatalog'=>LocationService::catalog(false),'addressCatalog'=>AddressService::catalog()];
  }
  public static function voter(int $id): array {
+  if(\App\Security\ExecutiveAccess::restricted()){\App\Security\ExecutiveAccess::person($id);}
   [$joins,$labels]=self::locationSql();
   $labels.=self::membershipSql();
   return Database::one('SELECT v.*,m.id AS membership_id,m.member_number,m.status AS membership_status,m.joined_on'.$labels.' FROM voters v LEFT JOIN members m ON m.voter_record_id=v.id'.$joins.MemberProfileService::sqlJoin().' WHERE v.id=? AND '.\App\Voters\TrashService::active(),[$id])??throw new HttpException(404,'Voter not found.');

@@ -106,20 +106,7 @@ final class VoterService
  }
  public static function markMember(int $voter,array $input): int {
   self::requireManage();
-  $joined=Validation::date($input,'joined_on',true);$status=Validation::choice($input,'status',['active','inactive']);
-  $official=self::officialId($input);
-  $profile=MemberProfileService::normalize($input);
-  return Database::transaction(static function()use($voter,$joined,$status,$official,$profile):int{
-   $enrollPerson=Database::one('SELECT * FROM voters WHERE id=? FOR UPDATE',[$voter])??throw new HttpException(404,'Voter not found.');\App\Voters\TrashService::check($enrollPerson);
-   $existing=Database::scalar('SELECT id FROM members WHERE voter_record_id=?',[$voter]);if($existing){return (int)$existing;}
-   Database::execute('INSERT INTO members(voter_record_id,joined_on,status,marked_by_user_id) VALUES(?,?,?,?)',[$voter,$joined,$status,Auth::user()['id']]);
-   $id=(int)Database::connection()->lastInsertId();$number='MEM-'.str_pad((string)$id,6,'0',STR_PAD_LEFT);
-   Database::execute('UPDATE members SET member_number=? WHERE id=?',[$number,$id]);
-   if(self::officialIdsReady()){Database::execute('UPDATE members SET official_membership_id=? WHERE id=?',[$official,$id]);}
-   MemberProfileService::save($id,$profile);
-   Database::execute('UPDATE voters SET updated_at=CURRENT_TIMESTAMP(6) WHERE id=?',[$voter]);
-   Auth::audit('member.marked','member',$id,['voter_record_id'=>$voter,'member_number'=>$number,'official_membership_id'=>$official,'joined_on'=>$joined,'status'=>$status]);return $id;
-  });
+  return Database::transaction(static fn():int=>\App\Membership\EnrollmentWriter::create($voter,$input));
  }
  public static function removeMember(int $voter,int $membership): bool {
   self::requireManage();
@@ -130,6 +117,7 @@ final class VoterService
    if(!$record){return false;} // Retrying an old form must not remove a later membership.
    if((int)$record['voter_record_id']!==$voter){throw new \InvalidArgumentException('This membership does not belong to the selected voter.');}
    \App\Executives\AppointmentService::guardMembershipRemoval($membership);
+   \App\Security\StaffIdentity::guardRemoval($membership);
    Auth::audit('member.removed','member',$membership,[
     'voter_record_id'=>$voter,'member_number'=>$record['member_number'],
     'official_membership_id'=>$record['official_membership_id']??null,

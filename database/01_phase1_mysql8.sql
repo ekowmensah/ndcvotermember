@@ -2,7 +2,7 @@
 CREATE TABLE app_users (
  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
  name VARCHAR(150) NOT NULL,email VARCHAR(190) NOT NULL UNIQUE,password_hash VARCHAR(255) NOT NULL,
- role ENUM('admin','registrar','viewer') NOT NULL DEFAULT 'admin',is_active TINYINT(1) NOT NULL DEFAULT 1,
+ role ENUM('admin','registrar','viewer') NOT NULL DEFAULT 'viewer',is_active TINYINT(1) NOT NULL DEFAULT 1,
  session_version INT UNSIGNED NOT NULL DEFAULT 1,last_login_at DATETIME(6) NULL,
  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

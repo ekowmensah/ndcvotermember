@@ -14,6 +14,6 @@ final class View
  public static function render(string $template,array $data=[],string $title=''): void {
   extract($data,EXTR_SKIP);$viewFile=self::path($template);$user=Auth::user();
   $appName=Config::get('APP_NAME','Membership Office');$currentPage=(string)($_GET['page']??'dashboard');
-  if($template==='auth/login'){require $viewFile;return;}require self::path('layouts/app');
+  if(in_array($template,['auth/login','auth/activate'],true)){require $viewFile;return;}require self::path('layouts/app');
  }
 }

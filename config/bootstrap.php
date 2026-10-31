@@ -11,6 +11,7 @@ App\Config::load(BASE_PATH . '/.env');
 date_default_timezone_set('UTC');
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
+ini_set('zend.exception_ignore_args', '1');
 if (!is_dir(BASE_PATH . '/storage')) { mkdir(BASE_PATH . '/storage', 0700, true); }
 ini_set('error_log', BASE_PATH . '/storage/php-error.log');
 

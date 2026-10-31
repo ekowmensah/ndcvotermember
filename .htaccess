@@ -5,7 +5,7 @@ Require all denied
 </FilesMatch>
 <IfModule mod_rewrite.c>
 RewriteEngine On
-RewriteRule ^(?:controllers|models|views|config|core|services|bin|database|scripts|storage|tests|vendor|node_modules)(?:/|$) - [F,L,NC]
+RewriteRule ^(?:controllers|models|views|config|core|services|bin|database|scripts|storage|tests|docs|vendor|node_modules)(?:/|$) - [F,L,NC]
 RewriteRule (^|/)\. - [F,L]
 RewriteRule \.(?:sql|md|json|lock|ps1|ini|log|ya?ml)$ - [F,L,NC]
 </IfModule>

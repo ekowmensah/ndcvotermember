@@ -53,6 +53,7 @@ final class PhotoService
  }
  public static function output(int $voter): never {
   Auth::requireLogin();
+  if(\App\Security\ExecutiveAccess::restricted()){\App\Security\ExecutiveAccess::person($voter);}
   $owner=Database::one('SELECT * FROM voters WHERE id=?',[$voter]);if(!$owner||(!empty($owner['deleted_at'])&&!Auth::admin())){throw new HttpException(404,'Photo unavailable.');}
   $photo=self::ready()?Database::one('SELECT image_data FROM voter_photos WHERE voter_record_id=?',[$voter]):null;
   if(!$photo){throw new HttpException(404,'No photo has been added for this voter.');}
